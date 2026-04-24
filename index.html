@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yahoo Finance Data Export</title>
+
+  <!-- Tailwind CSS דרך CDN - מתאים ל-GitHub Pages -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4">
+
+  <main class="w-full max-w-2xl">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl p-8">
+
+      <!-- כותרת ראשית -->
+      <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold text-blue-400 mb-2">
+          Yahoo Finance Data Export
+        </h1>
+        <p class="text-slate-400">
+          הזיני סימולי מניות, טווח תאריכים ותדירות — וקבלי קישור לגיליון Google Sheets
+        </p>
+      </div>
+
+      <!-- טופס שליחת הנתונים -->
+      <form id="financeForm" class="space-y-5">
+
+        <!-- רשימת סימולי מניות -->
+        <div>
+          <label class="block mb-2 text-sm font-medium text-slate-300">
+            סימולי מניות
+          </label>
+          <input
+            id="tickers"
+            type="text"
+            placeholder="לדוגמה: TSLA, AAPL, AMZN"
+            class="w-full rounded-xl bg-slate-800 border border-slate-600 px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <!-- תאריך התחלה -->
+        <div>
+          <label class="block mb-2 text-sm font-medium text-slate-300">
+            תאריך התחלה
+          </label>
+          <input
+            id="startDate"
+            type="date"
+            class="w-full rounded-xl bg-slate-800 border border-slate-600 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <!-- תאריך סיום -->
+        <div>
+          <label class="block mb-2 text-sm font-medium text-slate-300">
+            תאריך סיום
+          </label>
+          <input
+            id="endDate"
+            type="date"
+            class="w-full rounded-xl bg-slate-800 border border-slate-600 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        <!-- בחירת תדירות -->
+        <div>
+          <label class="block mb-2 text-sm font-medium text-slate-300">
+            תדירות נתונים
+          </label>
+          <select
+            id="frequency"
+            class="w-full rounded-xl bg-slate-800 border border-slate-600 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="1d">Daily</option>
+            <option value="1wk">Weekly</option>
+            <option value="1mo">Monthly</option>
+          </select>
+        </div>
+
+        <!-- כפתור שליחה -->
+        <button
+          id="submitBtn"
+          type="submit"
+          class="w-full rounded-xl bg-blue-600 hover:bg-blue-500 transition font-bold py-4 text-lg shadow-lg shadow-blue-900/30"
+        >
+          יצירת גיליון נתונים
+        </button>
+      </form>
+
+      <!-- אזור הודעות שגיאה / הצלחה -->
+      <div id="messageBox" class="mt-6 hidden rounded-xl p-4 text-sm"></div>
+
+      <!-- כפתור פתיחת הגיליון לאחר הצלחה -->
+      <div id="resultBox" class="mt-6 hidden">
+        <button
+          id="openSheetBtn"
+          class="w-full rounded-2xl bg-emerald-500 hover:bg-emerald-400 transition text-slate-950 font-bold py-5 text-xl shadow-lg"
+        >
+          פתיחת Google Sheet בטאב חדש
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // כתובת ה-Web App של Google Apps Script
+    // החליפי את הטקסט הזה בכתובת האמיתית שקיבלת אחרי Deploy
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwcEa__f8lhP61BI09dAr8rdfYHgH9rf_JuwfPkdZQ/dev";
+
+    const form = document.getElementById("financeForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const messageBox = document.getElementById("messageBox");
+    const resultBox = document.getElementById("resultBox");
+    const openSheetBtn = document.getElementById("openSheetBtn");
+
+    let sheetUrl = "";
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      // ניקוי תוצאות קודמות
+      messageBox.classList.add("hidden");
+      resultBox.classList.add("hidden");
+      sheetUrl = "";
+
+      // קבלת הערכים מהטופס
+      const tickersInput = document.getElementById("tickers").value;
+      const startDate = document.getElementById("startDate").value;
+      const endDate = document.getElementById("endDate").value;
+      const frequency = document.getElementById("frequency").value;
+
+      // המרת רשימת הסימולים למערך
+      const tickers = tickersInput
+        .split(",")
+        .map(ticker => ticker.trim().toUpperCase())
+        .filter(ticker => ticker.length > 0);
+
+      if (tickers.length === 0) {
+        showMessage("נא להזין לפחות סימול מניה אחד.", "error");
+        return;
+      }
+
+      // יצירת אובייקט הנתונים שנשלח לשרת
+      const payload = {
+        tickers,
+        startDate,
+        endDate,
+        frequency
+      };
+
+      try {
+        // מצב טעינה בכפתור
+        submitBtn.disabled = true;
+        submitBtn.textContent = "טוען נתונים...";
+
+        // שליחת POST ל-Google Apps Script
+        // משתמשים ב-text/plain כדי להפחית בעיות CORS מול Apps Script
+        const response = await fetch(WEB_APP_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || "אירעה שגיאה לא ידועה");
+        }
+
+        // שמירת הקישור שחזר מהשרת
+        sheetUrl = data.sheetUrl;
+
+        showMessage("הגיליון נוצר בהצלחה!", "success");
+
+        // הצגת כפתור לפתיחת הגיליון
+        resultBox.classList.remove("hidden");
+
+      } catch (error) {
+        showMessage("שגיאה: " + error.message, "error");
+      } finally {
+        // החזרת הכפתור למצב רגיל
+        submitBtn.disabled = false;
+        submitBtn.textContent = "יצירת גיליון נתונים";
+      }
+    });
+
+    // פתיחת הגיליון בטאב חדש
+    openSheetBtn.addEventListener("click", function () {
+      if (sheetUrl) {
+        window.open(sheetUrl, "_blank");
+      }
+    });
+
+    // פונקציה להצגת הודעת הצלחה או שגיאה
+    function showMessage(text, type) {
+      messageBox.textContent = text;
+      messageBox.classList.remove("hidden");
+
+      if (type === "success") {
+        messageBox.className =
+          "mt-6 rounded-xl p-4 text-sm bg-emerald-900/40 border border-emerald-600 text-emerald-300";
+      } else {
+        messageBox.className =
+          "mt-6 rounded-xl p-4 text-sm bg-red-900/40 border border-red-600 text-red-300";
+      }
+    }
+  </script>
+
+</body>
+</html>
