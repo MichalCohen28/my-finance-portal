@@ -8,7 +8,6 @@
 </head>
 
 <body class="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4">
-
   <main class="w-full max-w-2xl">
     <div class="bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl p-8">
 
@@ -22,75 +21,50 @@
       </div>
 
       <form id="financeForm" class="space-y-5">
-
         <div>
-          <label class="block mb-2 text-sm font-medium text-slate-300">
-            סימולי מניות
-          </label>
-          <input
-            id="tickers"
-            type="text"
-            placeholder="לדוגמה: TSLA, AAPL, AMZN"
+          <label class="block mb-2 text-sm font-medium text-slate-300">סימולי מניות</label>
+          <input id="tickers" type="text" placeholder="לדוגמה: TSLA, AAPL, AMZN"
             class="w-full rounded-xl bg-slate-800 border border-slate-600 px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+            required />
         </div>
 
         <div>
-          <label class="block mb-2 text-sm font-medium text-slate-300">
-            תאריך התחלה
-          </label>
-          <input
-            id="startDate"
-            type="date"
+          <label class="block mb-2 text-sm font-medium text-slate-300">תאריך התחלה</label>
+          <input id="startDate" type="date"
             class="w-full rounded-xl bg-slate-800 border border-slate-600 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+            required />
         </div>
 
         <div>
-          <label class="block mb-2 text-sm font-medium text-slate-300">
-            תאריך סיום
-          </label>
-          <input
-            id="endDate"
-            type="date"
+          <label class="block mb-2 text-sm font-medium text-slate-300">תאריך סיום</label>
+          <input id="endDate" type="date"
             class="w-full rounded-xl bg-slate-800 border border-slate-600 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+            required />
         </div>
 
         <div>
-          <label class="block mb-2 text-sm font-medium text-slate-300">
-            תדירות נתונים
-          </label>
-          <select
-            id="frequency"
-            class="w-full rounded-xl bg-slate-800 border border-slate-600 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <label class="block mb-2 text-sm font-medium text-slate-300">תדירות נתונים</label>
+          <select id="frequency"
+            class="w-full rounded-xl bg-slate-800 border border-slate-600 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="1d">Daily</option>
             <option value="1wk">Weekly</option>
             <option value="1mo">Monthly</option>
           </select>
         </div>
 
-        <button
-          id="submitBtn"
-          type="submit"
-          class="w-full rounded-xl bg-blue-600 hover:bg-blue-500 transition font-bold py-4 text-lg shadow-lg shadow-blue-900/30"
-        >
+        <button id="submitBtn" type="submit"
+          class="w-full rounded-xl bg-blue-600 hover:bg-blue-500 transition font-bold py-4 text-lg shadow-lg shadow-blue-900/30">
           יצירת גיליון נתונים
         </button>
       </form>
 
       <div id="messageBox" class="mt-6 hidden rounded-xl p-4 text-sm"></div>
-
     </div>
   </main>
 
   <script>
-    // כתובת ה-Web App שלך מ-Google Apps Script
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxZC4iLcViFFLbaXChqEWW5HERXabv9k-mqV07ycztJT2nvRdC2HrDbPHLiIjq3qIdl/exec";
+    // הקישור החדש שלך ל-Google Apps Script Web App
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby81V6adM7_cvK-Qx-gNBidSticKPpZMP7pzMCLYKGYb7Kmwq5DXDZUxEBOutEMjHmN/exec";
 
     const form = document.getElementById("financeForm");
     const submitBtn = document.getElementById("submitBtn");
@@ -117,10 +91,10 @@
       }
 
       const payload = {
-        tickers,
-        startDate,
-        endDate,
-        frequency
+        tickers: tickers,
+        startDate: startDate,
+        endDate: endDate,
+        frequency: frequency
       };
 
       submitBtn.disabled = true;
@@ -128,8 +102,7 @@
 
       showMessage("הבקשה נשלחה. הגיליון ייפתח בטאב חדש אחרי שהנתונים ייווצרו.", "success");
 
-      // יצירת טופס נסתר ששולח POST ל-Google Apps Script בטאב חדש
-      // זה עוקף את בעיית CORS כי לא קוראים response דרך fetch
+      // שולחים כ-form רגיל כדי לעקוף CORS
       const hiddenForm = document.createElement("form");
       hiddenForm.method = "POST";
       hiddenForm.action = WEB_APP_URL;
@@ -143,12 +116,10 @@
 
       hiddenForm.appendChild(input);
       document.body.appendChild(hiddenForm);
-
       hiddenForm.submit();
-
       document.body.removeChild(hiddenForm);
 
-      setTimeout(() => {
+      setTimeout(function () {
         submitBtn.disabled = false;
         submitBtn.textContent = "יצירת גיליון נתונים";
       }, 2000);
@@ -167,6 +138,5 @@
       }
     }
   </script>
-
 </body>
 </html>
