@@ -3,45 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stock Data Fetcher</title>
+  <title>Stock Data Fetcher | Pro Terminal</title>
 
-  <!-- Tailwind CSS מ-CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- גופנים: Heebo לעברית + IBM Plex Mono לנתונים פיננסיים -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
 
   <script>
-    // הגדרת צבעים וערכים מותאמים אישית ל-Tailwind
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            navy:  { 950: '#050d1a', 900: '#0a1628', 800: '#0f2040', 700: '#162d54', 600: '#1e3d6e' },
-            slate: { 400: '#94a3b8', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a' },
-            gold:  { 400: '#fbbf24', 500: '#f59e0b', 300: '#fcd34d' },
-            teal:  { 400: '#2dd4bf', 500: '#14b8a6' },
-          },
-          fontFamily: {
-            sans: ['Heebo', 'sans-serif'],
-            mono: ['IBM Plex Mono', 'monospace'],
+            navy: { 950: '#020617', 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
+            cyan: { 400: '#22d3ee', 500: '#06b6d4' },
+            emerald: { 400: '#34d399', 500: '#10b981' }
           },
           animation: {
-            'fade-up':    'fadeUp 0.6s ease forwards',
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'spin-slow':  'spin 2s linear infinite',
-            'ticker-scroll': 'tickerScroll 30s linear infinite',
+            'glow': 'glow 3s infinite alternate',
+            'float': 'float 6s infinite ease-in-out',
           },
           keyframes: {
-            fadeUp: {
-              '0%':   { opacity: '0', transform: 'translateY(20px)' },
-              '100%': { opacity: '1', transform: 'translateY(0)' },
+            glow: {
+              '0%': { 'box-shadow': '0 0 5px rgba(34, 211, 238, 0.2)' },
+              '100%': { 'box-shadow': '0 0 20px rgba(34, 211, 238, 0.6)' }
             },
-            tickerScroll: {
-              '0%':   { transform: 'translateX(0)' },
-              '100%': { transform: 'translateX(-50%)' },
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-10px)' }
             }
           }
         }
@@ -50,602 +41,273 @@
   </script>
 
   <style>
-    /* סגנונות גלובליים */
-    * { box-sizing: border-box; }
-
     body {
+      background-color: #020617;
       font-family: 'Heebo', sans-serif;
-      background-color: #050d1a;
-      min-height: 100vh;
       overflow-x: hidden;
     }
 
-    /* רשת רקע גיאומטרית עדינה */
-    body::before {
-      content: '';
+    /* רקע חלקיקים */
+    #particles-js {
       position: fixed;
       inset: 0;
-      background-image:
-        linear-gradient(rgba(30, 61, 110, 0.15) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(30, 61, 110, 0.15) 1px, transparent 1px);
-      background-size: 60px 60px;
-      pointer-events: none;
       z-index: 0;
+      pointer-events: none;
     }
 
-    /* הילה עגולה ברקע */
-    body::after {
-      content: '';
-      position: fixed;
-      top: -20%;
-      right: -10%;
-      width: 60vw;
-      height: 60vw;
-      background: radial-gradient(circle, rgba(30, 61, 110, 0.25) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
+    /* אפקט זכוכית (Glassmorphism) משופר */
+    .glass {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
     }
 
-    /* אנימציות כניסה בהשהייה לכל כרטיסייה */
-    .card-1 { animation: fadeUp 0.5s ease 0.1s both; }
-    .card-2 { animation: fadeUp 0.5s ease 0.2s both; }
-    .card-3 { animation: fadeUp 0.5s ease 0.3s both; }
-
-    /* עיצוב שדות קלט */
     .input-field {
-      background: rgba(15, 32, 64, 0.6);
-      border: 1px solid rgba(30, 61, 110, 0.6);
-      border-radius: 8px;
-      color: #e2e8f0;
-      padding: 0.75rem 1rem;
-      width: 100%;
-      font-family: 'Heebo', sans-serif;
-      font-size: 0.95rem;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      outline: none;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(71, 85, 105, 0.4);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .input-field::placeholder { color: #475569; }
+
     .input-field:focus {
-      border-color: #2dd4bf;
-      box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.1);
+      background: rgba(30, 41, 59, 0.8);
+      border-color: #22d3ee;
+      box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
     }
 
-    /* עיצוב select */
-    select.input-field {
-      appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: left 1rem center;
-      padding-left: 2.5rem;
-      cursor: pointer;
-    }
-    select.input-field option { background: #0a1628; }
+    /* סמן גרירה מעוצב */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #22d3ee; }
 
-    /* כפתור ראשי */
-    .btn-primary {
-      background: linear-gradient(135deg, #1e3d6e 0%, #0f2040 100%);
-      border: 1px solid rgba(45, 212, 191, 0.4);
-      color: #2dd4bf;
-      font-family: 'Heebo', sans-serif;
-      font-weight: 600;
-      font-size: 1rem;
-      letter-spacing: 0.05em;
-      padding: 0.875rem 2rem;
-      border-radius: 8px;
-      cursor: pointer;
-      width: 100%;
-      transition: all 0.25s ease;
+    /* אנימציית טעינה מתקדמת */
+    .shimmer {
       position: relative;
       overflow: hidden;
     }
-    .btn-primary::before {
+    .shimmer::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, rgba(45, 212, 191, 0.1), transparent);
-      opacity: 0;
-      transition: opacity 0.25s;
+      background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.1), transparent);
+      transform: translateX(-100%);
+      animation: shimmer 2s infinite;
     }
-    .btn-primary:hover::before { opacity: 1; }
-    .btn-primary:hover {
-      border-color: rgba(45, 212, 191, 0.8);
-      box-shadow: 0 0 20px rgba(45, 212, 191, 0.2);
-      transform: translateY(-1px);
-    }
-    .btn-primary:active { transform: translateY(0); }
-    .btn-primary:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
+    @keyframes shimmer { 100% { transform: translateX(100%); } }
 
-    /* כפתור פתיחת גיליון */
-    .btn-sheet {
-      background: linear-gradient(135deg, #0d3d2e 0%, #052116 100%);
-      border: 1px solid rgba(45, 212, 191, 0.5);
-      color: #2dd4bf;
-      padding: 1.1rem 2rem;
-      border-radius: 10px;
-      font-family: 'Heebo', sans-serif;
-      font-weight: 700;
-      font-size: 1.1rem;
-      cursor: pointer;
-      width: 100%;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
-      transition: all 0.25s ease;
-      animation: fadeUp 0.5s ease both;
-    }
-    .btn-sheet:hover {
-      background: linear-gradient(135deg, #134d3a 0%, #0a2e1e 100%);
-      border-color: rgba(45, 212, 191, 0.9);
-      box-shadow: 0 0 30px rgba(45, 212, 191, 0.25), 0 8px 24px rgba(0,0,0,0.4);
-      transform: translateY(-2px);
-    }
-
-    /* כרטיס מרכזי */
-    .main-card {
-      background: rgba(10, 22, 40, 0.85);
-      border: 1px solid rgba(30, 61, 110, 0.5);
-      border-radius: 16px;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
-    }
-
-    /* תצוגת שגיאה */
-    .error-box {
-      background: rgba(127, 29, 29, 0.3);
-      border: 1px solid rgba(239, 68, 68, 0.4);
-      border-radius: 8px;
-      padding: 0.875rem 1rem;
-      color: #fca5a5;
-      font-size: 0.9rem;
-      animation: fadeUp 0.3s ease both;
-    }
-
-    /* תגיות טיקר מעוצבות */
     .ticker-tag {
-      display: inline-flex;
-      align-items: center;
-      background: rgba(30, 61, 110, 0.5);
-      border: 1px solid rgba(45, 212, 191, 0.3);
-      color: #2dd4bf;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.75rem;
-      font-weight: 500;
-      padding: 0.2rem 0.6rem;
-      border-radius: 4px;
-      letter-spacing: 0.08em;
-      animation: fadeUp 0.3s ease both;
+      animation: popIn 0.3s cubic-bezier(0.26, 1.36, 0.74, 1.11) both;
     }
-
-    /* פס טיקר עליון */
-    .ticker-bar {
-      background: rgba(10, 22, 40, 0.9);
-      border-bottom: 1px solid rgba(30, 61, 110, 0.4);
-      overflow: hidden;
-      white-space: nowrap;
-    }
-    .ticker-inner {
-      display: inline-flex;
-      gap: 3rem;
-      animation: tickerScroll 30s linear infinite;
-    }
-    .ticker-item {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.75rem;
-      color: #64748b;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-    .ticker-up   { color: #2dd4bf; }
-    .ticker-down { color: #f87171; }
-
-    /* spinner טעינה */
-    .spinner {
-      width: 18px; height: 18px;
-      border: 2px solid rgba(45, 212, 191, 0.3);
-      border-top-color: #2dd4bf;
-      border-radius: 50%;
-      display: inline-block;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* קו הפרדה מעוצב */
-    .divider {
-      border: none;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(30, 61, 110, 0.6), transparent);
-    }
-
-    /* תווית שדה */
-    .field-label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #64748b;
-      margin-bottom: 0.5rem;
-    }
+    @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   </style>
 </head>
 
-<body class="relative text-slate-200">
+<body class="text-slate-300">
 
-  <!-- ═══════════════════════════════════════════════════
-       פס טיקר עליון – אינו אינטראקטיבי, רק דקורטיבי
-  ════════════════════════════════════════════════════ -->
-  <div class="ticker-bar py-2 px-4 relative z-10">
-    <div class="ticker-inner">
-      <!-- פריטים מוכפלים כדי ליצור לולאה חלקה -->
-      <span class="ticker-item">AAPL <span class="ticker-up">▲ 1.24%</span></span>
-      <span class="ticker-item">MSFT <span class="ticker-up">▲ 0.87%</span></span>
-      <span class="ticker-item">TSLA <span class="ticker-down">▼ 2.13%</span></span>
-      <span class="ticker-item">AMZN <span class="ticker-up">▲ 0.56%</span></span>
-      <span class="ticker-item">GOOG <span class="ticker-up">▲ 1.02%</span></span>
-      <span class="ticker-item">NVDA <span class="ticker-up">▲ 3.41%</span></span>
-      <span class="ticker-item">META <span class="ticker-down">▼ 0.33%</span></span>
-      <span class="ticker-item">BRK.B <span class="ticker-up">▲ 0.19%</span></span>
-      <span class="ticker-item">JPM <span class="ticker-down">▼ 0.74%</span></span>
-      <span class="ticker-item">V <span class="ticker-up">▲ 0.48%</span></span>
-      <!-- כפל לאנימציה רציפה -->
-      <span class="ticker-item">AAPL <span class="ticker-up">▲ 1.24%</span></span>
-      <span class="ticker-item">MSFT <span class="ticker-up">▲ 0.87%</span></span>
-      <span class="ticker-item">TSLA <span class="ticker-down">▼ 2.13%</span></span>
-      <span class="ticker-item">AMZN <span class="ticker-up">▲ 0.56%</span></span>
-      <span class="ticker-item">GOOG <span class="ticker-up">▲ 1.02%</span></span>
-      <span class="ticker-item">NVDA <span class="ticker-up">▲ 3.41%</span></span>
-      <span class="ticker-item">META <span class="ticker-down">▼ 0.33%</span></span>
-      <span class="ticker-item">BRK.B <span class="ticker-up">▲ 0.19%</span></span>
-      <span class="ticker-item">JPM <span class="ticker-down">▼ 0.74%</span></span>
-      <span class="ticker-item">V <span class="ticker-up">▲ 0.48%</span></span>
+  <canvas id="particles-js"></canvas>
+
+  <div class="relative z-20 w-full bg-slate-950/80 backdrop-blur-md border-b border-white/5 py-2">
+    <div class="flex overflow-hidden whitespace-nowrap group">
+      <div class="flex animate-[ticker-scroll_40s_linear_infinite] gap-12 px-4 hover:[animation-play-state:paused]">
+        <span class="flex items-center gap-2 font-mono text-xs"><b class="text-white">BTC/USD</b> <span class="text-emerald-400">+$2,410.50</span></span>
+        <span class="flex items-center gap-2 font-mono text-xs"><b class="text-white">NVDA</b> <span class="text-emerald-400">+4.21%</span></span>
+        <span class="flex items-center gap-2 font-mono text-xs"><b class="text-white">AAPL</b> <span class="text-red-400">-0.12%</span></span>
+        <span class="flex items-center gap-2 font-mono text-xs"><b class="text-white">TSLA</b> <span class="text-emerald-400">+1.55%</span></span>
+        <span class="flex items-center gap-2 font-mono text-xs"><b class="text-white">GOOGL</b> <span class="text-emerald-400">+0.88%</span></span>
+        <span class="flex items-center gap-2 font-mono text-xs"><b class="text-white">BTC/USD</b> <span class="text-emerald-400">+$2,410.50</span></span>
+        <span class="flex items-center gap-2 font-mono text-xs"><b class="text-white">NVDA</b> <span class="text-emerald-400">+4.21%</span></span>
+      </div>
     </div>
   </div>
 
-
-  <!-- ═══════════════════════════════════════════════════
-       אזור תוכן ראשי
-  ════════════════════════════════════════════════════ -->
-  <main class="relative z-10 min-h-screen flex flex-col items-center justify-start px-4 py-12">
-
-    <!-- כותרת עמוד -->
-    <div class="text-center mb-10 card-1">
-      <div class="flex items-center justify-center gap-3 mb-4">
-        <!-- אייקון גרף -->
-        <svg class="w-9 h-9 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" stroke-linecap="round" stroke-linejoin="round"/>
+  <main class="relative z-10 flex flex-col items-center justify-center px-4 py-16">
+    
+    <div class="text-center mb-12 animate-float">
+      <div class="inline-block p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 mb-6">
+        <svg class="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
         </svg>
-        <h1 class="text-3xl font-bold tracking-tight text-white">
-          Stock <span class="text-teal-400">Data</span> Fetcher
-        </h1>
       </div>
-      <p class="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
-        משוך נתוני מניות היסטוריים מ-Yahoo Finance וייצא אותם ישירות ל-Google Sheets
-      </p>
+      <h1 class="text-5xl font-extrabold text-white tracking-tighter mb-4">
+        Terminal <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">Data</span>
+      </h1>
+      <p class="text-slate-400 font-light tracking-wide">Professional Grade Stock Intelligence</p>
     </div>
 
+    <div class="glass w-full max-w-xl rounded-3xl p-10 relative overflow-hidden group">
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-cyan-500/10 blur-[100px] pointer-events-none"></div>
 
-    <!-- ═══════════════════════════
-         כרטיס הטופס הראשי
-    ════════════════════════════ -->
-    <div class="main-card w-full max-w-xl p-8 card-2">
-
-      <!-- כותרת הכרטיס -->
-      <div class="flex items-center gap-2 mb-6">
-        <div class="w-1.5 h-6 bg-teal-400 rounded-full"></div>
-        <h2 class="text-lg font-semibold text-slate-200">הגדרות שאילתה</h2>
-      </div>
-
-      <hr class="divider mb-6" />
-
-      <!-- ─── שדה 1: טיקרים ─────────────────────────────── -->
-      <div class="mb-5">
-        <label class="field-label" for="tickers">
-          סימולי מניות
-        </label>
-        <input
-          id="tickers"
-          type="text"
-          class="input-field"
-          placeholder="TSLA, AAPL, AMZN, MSFT"
-          autocomplete="off"
-          spellcheck="false"
-        />
-        <p class="mt-1.5 text-xs text-slate-500">הפרד בפסיקים. לדוגמה: TSLA, AAPL, GOOG</p>
-
-        <!-- תצוגת תגיות טיקרים בזמן אמת -->
-        <div id="tickerTags" class="flex flex-wrap gap-2 mt-3 min-h-[1.5rem]"></div>
-      </div>
-
-      <!-- ─── שדות תאריכים ──────────────────────────────── -->
-      <div class="grid grid-cols-2 gap-4 mb-5">
-        <div>
-          <label class="field-label" for="startDate">תאריך התחלה</label>
-          <input id="startDate" type="date" class="input-field" />
+      <div class="space-y-8">
+        <div class="relative">
+          <label class="text-[10px] uppercase tracking-[0.2em] text-cyan-400 font-bold mb-3 block">Asset Symbols</label>
+          <input id="tickers" type="text" class="input-field w-full p-4 rounded-xl text-white placeholder:text-slate-600 outline-none" placeholder="AAPL, NVDA, BTC-USD...">
+          <div id="tickerTags" class="flex flex-wrap gap-2 mt-4"></div>
         </div>
-        <div>
-          <label class="field-label" for="endDate">תאריך סיום</label>
-          <input id="endDate" type="date" class="input-field" />
+
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold mb-3 block">Start Period</label>
+            <input id="startDate" type="date" class="input-field w-full p-3 rounded-xl text-white outline-none">
+          </div>
+          <div>
+            <label class="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold mb-3 block">End Period</label>
+            <input id="endDate" type="date" class="input-field w-full p-3 rounded-xl text-white outline-none">
+          </div>
         </div>
+
+        <div>
+          <label class="text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold mb-3 block">Data Resolution</label>
+          <div class="grid grid-cols-3 gap-3">
+            <button onclick="setFreq('1d', this)" class="freq-btn p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-cyan-500/20 transition-all active-freq">Daily</button>
+            <button onclick="setFreq('1wk', this)" class="freq-btn p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-cyan-500/20 transition-all">Weekly</button>
+            <button onclick="setFreq('1mo', this)" class="freq-btn p-3 rounded-xl border border-white/5 bg-white/5 hover:bg-cyan-500/20 transition-all">Monthly</button>
+          </div>
+          <input type="hidden" id="frequency" value="1d">
+        </div>
+
+        <button id="submitBtn" onclick="fetchStockData()" class="w-full bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-navy-950 font-black py-5 rounded-2xl transition-all shadow-[0_0_20px_rgba(34,211,238,0.3)] active:scale-[0.98]">
+          <span id="btnText" class="flex items-center justify-center gap-2">
+            EXECUTE DATA FETCH
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-width="2.5"></path></svg>
+          </span>
+        </button>
       </div>
-
-      <!-- ─── תדירות ─────────────────────────────────────── -->
-      <div class="mb-7">
-        <label class="field-label" for="frequency">תדירות נתונים</label>
-        <select id="frequency" class="input-field">
-          <option value="1d">Daily – יומי</option>
-          <option value="1wk">Weekly – שבועי</option>
-          <option value="1mo">Monthly – חודשי</option>
-        </select>
-      </div>
-
-      <hr class="divider mb-6" />
-
-      <!-- ─── כפתור שליחה ────────────────────────────────── -->
-      <button id="submitBtn" class="btn-primary" onclick="fetchStockData()">
-        <span id="btnText">משוך נתונים</span>
-      </button>
-
-      <!-- ─── הודעות שגיאה ───────────────────────────────── -->
-      <div id="errorBox" class="error-box mt-4 hidden"></div>
-
     </div>
-    <!-- סוף כרטיס טופס -->
 
-
-    <!-- ═══════════════════════════
-         כרטיס תוצאה (מוסתר בתחילה)
-    ════════════════════════════ -->
-    <div id="resultCard" class="main-card w-full max-w-xl p-8 mt-5 hidden card-3">
-
-      <!-- כותרת תוצאה -->
-      <div class="flex items-center gap-3 mb-5">
-        <!-- אייקון וי מצלחה -->
-        <div class="w-10 h-10 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+    <div id="resultCard" class="hidden w-full max-w-xl mt-8 animate-popIn">
+      <div class="glass rounded-3xl p-8 border-emerald-500/30 bg-emerald-500/5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-white font-bold text-xl mb-1">Process Synchronized</h3>
+            <p id="resultMeta" class="text-emerald-400/80 text-xs font-mono"></p>
+          </div>
+          <div class="bg-emerald-500/20 p-3 rounded-full">
+            <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
         </div>
-        <div>
-          <h3 class="font-semibold text-white text-base">הגיליון מוכן!</h3>
-          <p id="resultMeta" class="text-slate-400 text-sm mt-0.5"></p>
-        </div>
+        <a id="sheetLink" href="#" target="_blank" class="mt-8 flex items-center justify-center gap-3 w-full bg-white text-navy-950 font-bold py-4 rounded-xl hover:bg-slate-200 transition-colors">
+          OPEN SPREADSHEET
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke-width="2.5"></path></svg>
+        </a>
       </div>
-
-      <hr class="divider mb-5" />
-
-      <!-- כפתור פתיחת הגיליון -->
-      <a id="sheetLink" href="#" target="_blank" rel="noopener" class="btn-sheet">
-        <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="12" y1="18" x2="12" y2="12"/>
-          <line x1="9"  y1="15" x2="15" y2="15"/>
-        </svg>
-        פתח ב-Google Sheets
-        <svg class="w-4 h-4 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="7" y1="17" x2="17" y2="7"/>
-          <polyline points="7 7 17 7 17 17"/>
-        </svg>
-      </a>
-
-      <!-- כפתור שליחה חוזרת -->
-      <button
-        onclick="resetForm()"
-        class="mt-3 w-full text-sm text-slate-500 hover:text-slate-300 transition-colors py-2"
-      >
-        ← שליחה חדשה
-      </button>
     </div>
-    <!-- סוף כרטיס תוצאה -->
 
-
-    <!-- פוטר -->
-    <footer class="mt-12 text-center text-xs text-slate-700 font-mono card-3">
-      <span>STOCK DATA FETCHER</span>
-      <span class="mx-2 text-slate-800">|</span>
-      <span>POWERED BY YAHOO FINANCE + GOOGLE SHEETS</span>
-    </footer>
-
-  </main><!-- סוף main -->
-
+  </main>
 
   <script>
-    // ═══════════════════════════════════════════════════
-    // הגדרות
-    // ═══════════════════════════════════════════════════
-
-    // ← כאן מכניסים את ה-URL של ה-Web App ב-Google Apps Script
+    // --- הגדרות WEB APP ---
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzU77UQes0vMYcmYcUGKtP-eCVdpWOkGcfYM-JYkziKg3IJE9EHbWeBPFrFxlLEeO-W/exec";
 
+    // --- רקע חלקיקים בסיסי ב-Canvas ---
+    const canvas = document.getElementById('particles-js');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
 
-    // ═══════════════════════════════════════════════════
-    // אתחול: קביעת תאריכי ברירת מחדל
-    // ═══════════════════════════════════════════════════
-    (function initDates() {
-      const today  = new Date();
-      const oneYear = new Date(today);
-      oneYear.setFullYear(today.getFullYear() - 1);
+    function initParticles() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      particles = [];
+      for (let i = 0; i < 50; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 2,
+          speedX: (Math.random() - 0.5) * 0.5,
+          speedY: (Math.random() - 0.5) * 0.5
+        });
+      }
+    }
 
-      // פורמט YYYY-MM-DD לשדות type="date"
-      const fmt = d => d.toISOString().slice(0, 10);
-      document.getElementById("startDate").value = fmt(oneYear);
-      document.getElementById("endDate").value   = fmt(today);
-    })();
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(34, 211, 238, 0.3)';
+      particles.forEach(p => {
+        p.x += p.speedX;
+        p.y += p.speedY;
+        if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    initParticles();
+    animateParticles();
 
+    // --- לוגיקת טופס ---
+    function setFreq(val, btn) {
+      document.getElementById('frequency').value = val;
+      document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('bg-cyan-500/30', 'border-cyan-400'));
+      btn.classList.add('bg-cyan-500/30', 'border-cyan-400');
+    }
 
-    // ═══════════════════════════════════════════════════
-    // תגיות טיקר בזמן אמת – מעדכנות בזמן הקלדה
-    // ═══════════════════════════════════════════════════
-    document.getElementById("tickers").addEventListener("input", function () {
+    document.getElementById("tickers").addEventListener("input", function() {
       const container = document.getElementById("tickerTags");
       container.innerHTML = "";
-
-      // פיצול הקלט לפי פסיק, ניקוי רווחים
-      const tags = this.value
-        .split(",")
-        .map(t => t.trim().toUpperCase())
-        .filter(t => t.length > 0);
-
-      tags.forEach((tag, i) => {
+      this.value.split(",").map(t => t.trim().toUpperCase()).filter(t => t).forEach(tag => {
         const span = document.createElement("span");
-        span.className = "ticker-tag";
-        span.style.animationDelay = `${i * 0.05}s`;
+        span.className = "ticker-tag px-3 py-1 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 text-[10px] font-mono font-bold tracking-wider";
         span.textContent = tag;
         container.appendChild(span);
       });
     });
 
-
-    // ═══════════════════════════════════════════════════
-    // פונקציה ראשית: שליחת הבקשה לשרת
-    // ═══════════════════════════════════════════════════
     async function fetchStockData() {
+      const btn = document.getElementById("submitBtn");
+      const btnText = document.getElementById("btnText");
+      
+      // מצב טעינה
+      btn.disabled = true;
+      btn.classList.add('shimmer', 'opacity-80');
+      btnText.innerHTML = "SYNCHRONIZING WITH YAHOO...";
 
-      // ── איסוף ערכי הטופס ──
-      const tickersRaw = document.getElementById("tickers").value.trim();
-      const startDate  = document.getElementById("startDate").value;
-      const endDate    = document.getElementById("endDate").value;
-      const frequency  = document.getElementById("frequency").value;
-
-      // ── ולידציה בסיסית ──
-      if (!tickersRaw) {
-        showError("נא להזין לפחות סימול מניה אחד");
-        return;
-      }
-      if (!startDate || !endDate) {
-        showError("נא לבחור תאריכי התחלה וסיום");
-        return;
-      }
-      if (new Date(startDate) >= new Date(endDate)) {
-        showError("תאריך ההתחלה חייב להיות לפני תאריך הסיום");
-        return;
-      }
-
-      // המרת מחרוזת הטיקרים למערך נקי
-      const tickers = tickersRaw
-        .split(",")
-        .map(t => t.trim().toUpperCase())
-        .filter(t => t.length > 0);
-
-      // ── מצב טעינה ──
-      setLoading(true);
-      hideError();
-      document.getElementById("resultCard").classList.add("hidden");
-
-      // ── בניית אובייקט ה-JSON לשליחה ──
-      const payload = { tickers, startDate, endDate, frequency };
+      const payload = {
+        tickers: document.getElementById("tickers").value.split(",").map(t => t.trim()),
+        startDate: document.getElementById("startDate").value,
+        endDate: document.getElementById("endDate").value,
+        frequency: document.getElementById("frequency").value
+      };
 
       try {
-        // ── שליחת הבקשה ──
-        // Content-Type: text/plain למניעת CORS preflight
-        // (Google Apps Script אינו תומך ב-application/json ב-doPost ללא הגדרות נוספות)
         const response = await fetch(WEB_APP_URL, {
-          method : "POST",
+          method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body   : JSON.stringify(payload),
+          body: JSON.stringify(payload)
         });
-
-        // בדיקת קוד תשובת HTTP
-        if (!response.ok) {
-          throw new Error(`שגיאת שרת: HTTP ${response.status}`);
-        }
-
-        // פרסור התשובה כ-JSON
         const data = await response.json();
 
-        // בדיקת שדה success שהשרת מחזיר
-        if (!data.success) {
-          throw new Error(data.error || "שגיאה לא ידועה מהשרת");
+        if (data.success) {
+          // חגיגת קונפטי!
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#22d3ee', '#10b981', '#ffffff']
+          });
+
+          document.getElementById("resultMeta").textContent = `DATASET: ${data.rowCount} ROWS | ASSETS: ${data.tickers.join(", ")}`;
+          document.getElementById("sheetLink").href = data.sheetUrl;
+          document.getElementById("resultCard").classList.remove("hidden");
         }
-
-        // ── הצגת התוצאה ──
-        showResult(data);
-
-      } catch (err) {
-        // טיפול בשגיאות רשת ושגיאות השרת
-        showError("שגיאה: " + err.message);
+      } catch (e) {
+        alert("System Error: Connection to backend failed.");
       } finally {
-        // בכל מקרה – ביטול מצב הטעינה
-        setLoading(false);
+        btn.disabled = false;
+        btn.classList.remove('shimmer', 'opacity-80');
+        btnText.innerHTML = `EXECUTE DATA FETCH`;
       }
     }
 
-
-    // ═══════════════════════════════════════════════════
-    // הצגת כרטיס התוצאה עם הלינק לגיליון
-    // ═══════════════════════════════════════════════════
-    function showResult(data) {
-      const card     = document.getElementById("resultCard");
-      const link     = document.getElementById("sheetLink");
-      const metaText = document.getElementById("resultMeta");
-
-      // עדכון ה-href של כפתור הגיליון
-      link.href = data.sheetUrl;
-
-      // הצגת מידע סיכום
-      const rowInfo    = data.rowCount ? `${data.rowCount.toLocaleString()} שורות · ` : "";
-      const tickerInfo = data.tickers  ? data.tickers.join(", ") : "";
-      metaText.textContent = rowInfo + tickerInfo;
-
-      // הצגת הכרטיס
-      card.classList.remove("hidden");
-
-      // גלילה חלקה לכרטיס התוצאה
-      card.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-
-
-    // ═══════════════════════════════════════════════════
-    // מצב טעינה – עדכון כפתור השליחה
-    // ═══════════════════════════════════════════════════
-    function setLoading(isLoading) {
-      const btn  = document.getElementById("submitBtn");
-      const text = document.getElementById("btnText");
-
-      btn.disabled = isLoading;
-
-      if (isLoading) {
-        // החלפת הטקסט לספינר + הודעת טעינה
-        text.innerHTML = `<span class="spinner mr-2"></span>טוען נתונים...`;
-      } else {
-        text.innerHTML = "משוך נתונים";
-      }
-    }
-
-
-    // ═══════════════════════════════════════════════════
-    // הצגה / הסתרת שגיאות
-    // ═══════════════════════════════════════════════════
-    function showError(msg) {
-      const box = document.getElementById("errorBox");
-      box.textContent = "⚠ " + msg;
-      box.classList.remove("hidden");
-    }
-
-    function hideError() {
-      document.getElementById("errorBox").classList.add("hidden");
-    }
-
-
-    // ═══════════════════════════════════════════════════
-    // איפוס הטופס לשליחה חדשה
-    // ═══════════════════════════════════════════════════
-    function resetForm() {
-      document.getElementById("resultCard").classList.add("hidden");
-      document.getElementById("tickers").value = "";
-      document.getElementById("tickerTags").innerHTML = "";
-      hideError();
-      // גלילה לראש הטופס
-      document.getElementById("tickers").focus();
-    }
+    // אתחול תאריכים
+    const end = new Date();
+    const start = new Date();
+    start.setFullYear(end.getFullYear() - 1);
+    document.getElementById("startDate").value = start.toISOString().split('T')[0];
+    document.getElementById("endDate").value = end.toISOString().split('T')[0];
   </script>
-
 </body>
 </html>
