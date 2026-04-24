@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Yahoo Finance Data Export</title>
-
-  <!-- Tailwind CSS דרך CDN - מתאים ל-GitHub Pages -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -14,20 +12,17 @@
   <main class="w-full max-w-2xl">
     <div class="bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl p-8">
 
-      <!-- כותרת ראשית -->
       <div class="mb-8 text-center">
         <h1 class="text-3xl font-bold text-blue-400 mb-2">
           Yahoo Finance Data Export
         </h1>
         <p class="text-slate-400">
-          הזיני סימולי מניות, טווח תאריכים ותדירות — וקבלי קישור לגיליון Google Sheets
+          הזיני סימולי מניות, טווח תאריכים ותדירות — והמערכת תפתח גיליון Google Sheets חדש
         </p>
       </div>
 
-      <!-- טופס שליחת הנתונים -->
       <form id="financeForm" class="space-y-5">
 
-        <!-- רשימת סימולי מניות -->
         <div>
           <label class="block mb-2 text-sm font-medium text-slate-300">
             סימולי מניות
@@ -41,7 +36,6 @@
           />
         </div>
 
-        <!-- תאריך התחלה -->
         <div>
           <label class="block mb-2 text-sm font-medium text-slate-300">
             תאריך התחלה
@@ -54,7 +48,6 @@
           />
         </div>
 
-        <!-- תאריך סיום -->
         <div>
           <label class="block mb-2 text-sm font-medium text-slate-300">
             תאריך סיום
@@ -67,7 +60,6 @@
           />
         </div>
 
-        <!-- בחירת תדירות -->
         <div>
           <label class="block mb-2 text-sm font-medium text-slate-300">
             תדירות נתונים
@@ -82,7 +74,6 @@
           </select>
         </div>
 
-        <!-- כפתור שליחה -->
         <button
           id="submitBtn"
           type="submit"
@@ -92,50 +83,29 @@
         </button>
       </form>
 
-      <!-- אזור הודעות שגיאה / הצלחה -->
       <div id="messageBox" class="mt-6 hidden rounded-xl p-4 text-sm"></div>
-
-      <!-- כפתור פתיחת הגיליון לאחר הצלחה -->
-      <div id="resultBox" class="mt-6 hidden">
-        <button
-          id="openSheetBtn"
-          class="w-full rounded-2xl bg-emerald-500 hover:bg-emerald-400 transition text-slate-950 font-bold py-5 text-xl shadow-lg"
-        >
-          פתיחת Google Sheet בטאב חדש
-        </button>
-      </div>
 
     </div>
   </main>
 
   <script>
-    // כתובת ה-Web App של Google Apps Script
-    // החליפי את הטקסט הזה בכתובת האמיתית שקיבלת אחרי Deploy
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwhNz86i_0MUCs4_omJyn0ufAriz7Cer2KBqNTb0BiM-lhdjcfTI8A2j3d0qVpMuAcc/exec";
+    // כתובת ה-Web App שלך מ-Google Apps Script
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyc2K8606fEvSjvc9A-i13kmIvnOyXtgnI-SRO0CMrszMamckbmMqe2ZmiFEdyAre5S/exec";
 
     const form = document.getElementById("financeForm");
     const submitBtn = document.getElementById("submitBtn");
     const messageBox = document.getElementById("messageBox");
-    const resultBox = document.getElementById("resultBox");
-    const openSheetBtn = document.getElementById("openSheetBtn");
 
-    let sheetUrl = "";
-
-    form.addEventListener("submit", async function (event) {
+    form.addEventListener("submit", function (event) {
       event.preventDefault();
 
-      // ניקוי תוצאות קודמות
       messageBox.classList.add("hidden");
-      resultBox.classList.add("hidden");
-      sheetUrl = "";
 
-      // קבלת הערכים מהטופס
       const tickersInput = document.getElementById("tickers").value;
       const startDate = document.getElementById("startDate").value;
       const endDate = document.getElementById("endDate").value;
       const frequency = document.getElementById("frequency").value;
 
-      // המרת רשימת הסימולים למערך
       const tickers = tickersInput
         .split(",")
         .map(ticker => ticker.trim().toUpperCase())
@@ -146,7 +116,6 @@
         return;
       }
 
-      // יצירת אובייקט הנתונים שנשלח לשרת
       const payload = {
         tickers,
         startDate,
@@ -154,52 +123,37 @@
         frequency
       };
 
-      try {
-        // מצב טעינה בכפתור
-        submitBtn.disabled = true;
-        submitBtn.textContent = "טוען נתונים...";
+      submitBtn.disabled = true;
+      submitBtn.textContent = "טוען נתונים...";
 
-        // שליחת POST ל-Google Apps Script
-        // משתמשים ב-text/plain כדי להפחית בעיות CORS מול Apps Script
-        const response = await fetch(WEB_APP_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-          },
-          body: JSON.stringify(payload)
-        });
+      showMessage("הבקשה נשלחה. הגיליון ייפתח בטאב חדש אחרי שהנתונים ייווצרו.", "success");
 
-        const data = await response.json();
+      // יצירת טופס נסתר ששולח POST ל-Google Apps Script בטאב חדש
+      // זה עוקף את בעיית CORS כי לא קוראים response דרך fetch
+      const hiddenForm = document.createElement("form");
+      hiddenForm.method = "POST";
+      hiddenForm.action = WEB_APP_URL;
+      hiddenForm.target = "_blank";
+      hiddenForm.style.display = "none";
 
-        if (!data.success) {
-          throw new Error(data.error || "אירעה שגיאה לא ידועה");
-        }
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "payload";
+      input.value = JSON.stringify(payload);
 
-        // שמירת הקישור שחזר מהשרת
-        sheetUrl = data.sheetUrl;
+      hiddenForm.appendChild(input);
+      document.body.appendChild(hiddenForm);
 
-        showMessage("הגיליון נוצר בהצלחה!", "success");
+      hiddenForm.submit();
 
-        // הצגת כפתור לפתיחת הגיליון
-        resultBox.classList.remove("hidden");
+      document.body.removeChild(hiddenForm);
 
-      } catch (error) {
-        showMessage("שגיאה: " + error.message, "error");
-      } finally {
-        // החזרת הכפתור למצב רגיל
+      setTimeout(() => {
         submitBtn.disabled = false;
         submitBtn.textContent = "יצירת גיליון נתונים";
-      }
+      }, 2000);
     });
 
-    // פתיחת הגיליון בטאב חדש
-    openSheetBtn.addEventListener("click", function () {
-      if (sheetUrl) {
-        window.open(sheetUrl, "_blank");
-      }
-    });
-
-    // פונקציה להצגת הודעת הצלחה או שגיאה
     function showMessage(text, type) {
       messageBox.textContent = text;
       messageBox.classList.remove("hidden");
